@@ -41,12 +41,19 @@ def parse_book_page(id, book_url):
 
     title_tag = soup.find('div', class_='bookimage').find('img')['src']
 
-    comments = soup.find_all('div', class_='texts')  # .find_all('span', class_='black')
+    genre = soup.find_all('span', class_='d_book')
+    # print(genre)
+    for i in genre:
+        genre2 = i.find('a').text
+
+        print(genre2)
+
+    '''comments = soup.find_all('div', class_='texts')#.find_all('span', class_='black')
     for comment in comments:
-        com = comment.find('span', class_='black').text
+        com=comment.find('span',class_='black').text
         print(com)
     print()
-    # print(comments)
+    #print(comments)'''
 
     download_book(response, title_book, folder='books/')
     download_picture(response, title_tag, folder='images/')
