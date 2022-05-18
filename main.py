@@ -1,9 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-from pathlib import Path
 import os
-import lxml
-from urllib.error import HTTPError
 from urllib.parse import urljoin
 
 
@@ -37,23 +34,19 @@ def parse_book_page(id, book_url):
     title_book, title_avtor = title_tag.split(' :: ')
     title_book = title_book.split()
     title_book = ' '.join(title_book)
-    print(title_book)
+    title_avtor = title_avtor.split()
+    title_avtor = ' '.join(title_avtor)
+
+    print('Заголовок:', title_book)
+    print('Автор:', title_avtor)
+
+    genres = soup.find_all('span', class_='d_book')
+    for genre in genres:
+        genre_book = genre.find('a').text
+        print('Жанр:', genre_book)
+        print()
 
     title_tag = soup.find('div', class_='bookimage').find('img')['src']
-
-    genre = soup.find_all('span', class_='d_book')
-    # print(genre)
-    for i in genre:
-        genre2 = i.find('a').text
-
-        print(genre2)
-
-    '''comments = soup.find_all('div', class_='texts')#.find_all('span', class_='black')
-    for comment in comments:
-        com=comment.find('span',class_='black').text
-        print(com)
-    print()
-    #print(comments)'''
 
     download_book(response, title_book, folder='books/')
     download_picture(response, title_tag, folder='images/')
@@ -61,26 +54,25 @@ def parse_book_page(id, book_url):
 
 
 if __name__ == "__main__":
+    start_id = int(input())
+    end_id = int(input())
+
     os.makedirs("books", exist_ok=True)
     os.makedirs("images", exist_ok=True)
+
     url_book = "https://tululu.org/txt.php"
     download_url = 'https://tululu.org'
     book_url = 'https://tululu.org/b{id}/'
 
-    for book_num in range(1, 11):
+    for book_num in range(start_id, end_id):
         params = {"id": book_num}
         response = requests.get(url_book, params)
         response_p = requests.get(book_url)
 
         try:
             response.raise_for_status()
-            # response_p.raise_for_status()
             check_for_redirect(response)
             parse_book_page(book_num, book_url)
 
-            # download_picture(book_num, book_url)
-            # check_for_redirect(response2)
-
-            # print(urljoin(download, picture(response)))
         except requests.exceptions.HTTPError:
-            print("такой книги не существует")
+            continue
