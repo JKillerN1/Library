@@ -5,7 +5,6 @@
 Python3 должен быть уже установлен. Затем используйте pip(или pip3, если есть конфликт с Python2) для установки зависимостей:
 ```
 pip install -r requirements.txt
-pip install requests BeautifulSoup4 lxml
 ```
 ### Как запустить
 Чтобы запустить программу, в терминале нужно написать 
