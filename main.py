@@ -75,4 +75,4 @@ if __name__ == "__main__":
             parse_book_page(book_num, book_url)
 
         except requests.exceptions.HTTPError:
-            continue
+            print('такой книги не существует')
