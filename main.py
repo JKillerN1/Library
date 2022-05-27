@@ -60,9 +60,9 @@ if __name__ == "__main__":
     os.makedirs("books", exist_ok=True)
     os.makedirs("images", exist_ok=True)
 
-    url_book = "https://tululu.org/txt.php"
+    main_page_url = "https://tululu.org/txt.php"
     download_url = 'https://tululu.org'
-    book_url = 'https://tululu.org/b{id}/'
+    book_page_url = 'https://tululu.org/b{id}/'
 
     for book_num in range(start_id, end_id):
         params = {"id": book_num}
