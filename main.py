@@ -1,4 +1,5 @@
 import requests
+import argparse
 from bs4 import BeautifulSoup
 import os
 from urllib.parse import urljoin
@@ -54,8 +55,13 @@ def parse_book_page(id, book_url):
 
 
 if __name__ == "__main__":
-    start_id = int(input())
-    end_id = int(input())
+    parser = argparse.ArgumentParser()
+    parser.add_argument('id', type=int)
+    parser.add_argument('id2', type=int)
+    args = parser.parse_args()
+
+    start_id = args.id
+    end_id = args.id2
 
     os.makedirs("books", exist_ok=True)
     os.makedirs("images", exist_ok=True)
