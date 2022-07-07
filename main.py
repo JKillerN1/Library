@@ -30,14 +30,14 @@ def parse_book_page(response):
     soup = BeautifulSoup(response.text, 'lxml')
 
     title_tag = soup.find('h1').text
-    title_book, title_avtor = title_tag.split(' :: ')
+    title_book, title_author = title_tag.split(' :: ')
     title_book = title_book.split()
     title_book = ' '.join(title_book)
-    title_avtor = title_avtor.split()
-    title_avtor = ' '.join(title_avtor)
+    title_author = title_author.split()
+    title_author = ' '.join(title_author)
 
     print('Заголовок:', title_book)
-    print('Автор:', title_avtor)
+    print('Автор:', title_author)
 
     genres = soup.find_all('span', class_='d_book')
     for genre in genres:
@@ -48,7 +48,7 @@ def parse_book_page(response):
 
     download_book(response, title_book, folder='books/')
     download_picture(response, title_tag, folder='images/')
-    return title_book, title_avtor
+    return title_book, title_author
 
 
 if __name__ == "__main__":
