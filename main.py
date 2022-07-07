@@ -20,7 +20,7 @@ def download_book(response, filename, folder='books/'):
 def download_picture(response, filename, folder='images/'):
     download_url = 'https://tululu.org'
     response = requests.get(urljoin(download_url, filename))
-    picture_name = filename.split('/')[2]
+    picture_name = filename  # .split('/')[2]
     path = os.path.join(folder, picture_name)
     with open(path, 'wb') as file:
         file.write(response.content)
@@ -43,12 +43,12 @@ def parse_book_page(response):
     genre_book = [genre.find('a').text for genre in genres]
     # for genre in genres:
     #   genre_book = genre.find('a').text
-    print('Жанр:', " ".join(genre_book))
+    # print('Жанр:', " ".join(genre_book))
 
     title_tag = soup.find('div', class_='bookimage').find('img')['src']
 
-    download_book(response, title_book, folder='books/')
-    download_picture(response, title_tag, folder='images/')
+    # download_book(response, title_book, folder='books/')
+    # download_picture(response, title_tag, folder='images/')
     return title_book, title_avtor, " ".join(genre_book)
 
 
@@ -82,6 +82,11 @@ if __name__ == "__main__":
             check_for_redirect(response)
             print(parse_book_page(response_page))
 
+            if parse_book_page(response_page):
+                download_book(response, parse_book_page(response_page)[0], folder='books/')
+                download_picture(response, parse_book_page(response_page)[1], folder='images/')
+
+
         except requests.exceptions.HTTPError:
             print('такой книги не существует')
-            print()
+
