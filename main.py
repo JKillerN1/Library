@@ -30,25 +30,26 @@ def parse_book_page(response):
     soup = BeautifulSoup(response.text, 'lxml')
 
     title_tag = soup.find('h1').text
-    title_book, title_author = title_tag.split(' :: ')
+    title_book, title_avtor = title_tag.split(' :: ')
     title_book = title_book.split()
     title_book = ' '.join(title_book)
-    title_author = title_author.split()
-    title_author = ' '.join(title_author)
+    title_avtor = title_avtor.split()
+    title_avtor = ' '.join(title_avtor)
 
-    print('Заголовок:', title_book)
-    print('Автор:', title_author)
+    #  print('Заголовок:', title_book)
+    #  print('Автор:', title_avtor)
 
     genres = soup.find_all('span', class_='d_book')
-    for genre in genres:
-        genre_book = genre.find('a').text
-        print('Жанр:', genre_book)
+    genre_book = [genre.find('a').text for genre in genres]
+    # for genre in genres:
+    #   genre_book = genre.find('a').text
+    print('Жанр:', " ".join(genre_book))
 
     title_tag = soup.find('div', class_='bookimage').find('img')['src']
 
     download_book(response, title_book, folder='books/')
     download_picture(response, title_tag, folder='images/')
-    return title_book, title_author
+    return title_book, title_avtor, " ".join(genre_book)
 
 
 if __name__ == "__main__":
@@ -71,13 +72,15 @@ if __name__ == "__main__":
         params = {"id": book_num}
         response = requests.get(main_page_url, params)
         response_page = requests.get(book_page_url.format(id=params['id']))
+        # print(book_page_url.format(id=params['id']))
 
         try:
-
+            # response2 = requests.get(book_page_url.format(id=id))
+            # response2.raise_for_status()
             response.raise_for_status()
             response_page.raise_for_status()
             check_for_redirect(response)
-            parse_book_page(response_page)
+            print(parse_book_page(response_page))
 
         except requests.exceptions.HTTPError:
             print('такой книги не существует')
