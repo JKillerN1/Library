@@ -26,9 +26,7 @@ def download_picture(response, filename, folder='images/'):
         file.write(response.content)
 
 
-def parse_book_page(id, book_url):
-    response = requests.get(book_url.format(id=id))
-    response.raise_for_status()
+def parse_book_page(response):
     soup = BeautifulSoup(response.text, 'lxml')
 
     title_tag = soup.find('h1').text
@@ -45,7 +43,6 @@ def parse_book_page(id, book_url):
     for genre in genres:
         genre_book = genre.find('a').text
         print('Жанр:', genre_book)
-        print()
 
     title_tag = soup.find('div', class_='bookimage').find('img')['src']
 
@@ -72,13 +69,16 @@ if __name__ == "__main__":
 
     for book_num in range(start_id, end_id):
         params = {"id": book_num}
-        response = requests.get(url_book, params)
-        response_p = requests.get(book_url)
+        response = requests.get(main_page_url, params)
+        response_page = requests.get(book_page_url.format(id=params['id']))
 
         try:
+
             response.raise_for_status()
+            response_page.raise_for_status()
             check_for_redirect(response)
-            parse_book_page(book_num, book_url)
+            parse_book_page(response_page)
 
         except requests.exceptions.HTTPError:
             print('такой книги не существует')
+            print()
