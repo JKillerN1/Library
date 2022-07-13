@@ -10,9 +10,19 @@ def check_for_redirect(response):
         raise requests.exceptions.HTTPError
 
 
-def download_book(response, filename, folder='books/'):
+def dowloand_comments(response):
+    soup = BeautifulSoup(response.text, 'lxml')
+    #print(response.text)
+    comments = soup.find_all('div', class_='texts')
+    #print(comments)
+    for comment in comments:
+        com = comment.find('span', class_='black').text
+        print(com)
+
+
+def download_book(response, id, filename, folder='books/'):
     file_name = filename
-    filename_book = os.path.join(folder, f'{file_name}.txt')
+    #filename_book = os.path.join(folder, f'{id}.{file_name}.txt')
     with open(filename_book, 'w', encoding="utf-8") as file:
         file.write(response.text)
 
@@ -81,10 +91,12 @@ if __name__ == "__main__":
             response_page.raise_for_status()
             check_for_redirect(response)
             print(parse_book_page(response_page))
+            print(dowloand_comments(response_page))
 
             if parse_book_page(response_page):
-                download_book(response, parse_book_page(response_page)[0], folder='books/')
-                download_picture(response, parse_book_page(response_page)[1], folder='images/')
+                download_book(response, book_num, parse_book_page(response_page)[0], folder='books/')
+                download_picture(response, parse_book_page(response_page)[0], folder='images/')
+
 
 
         except requests.exceptions.HTTPError:
