@@ -39,10 +39,11 @@ def parse_book_page(soup):
 
     title_tag = soup.find('h1').text
     title_book, title_author = title_tag.split(' :: ')
-    title_book = title_book.split()
-    title_book = ' '.join(title_book)
-    title_author = title_author.split()
-    title_author = ' '.join(title_author)
+    title_book = title_book.strip()
+    title_author = title_author.strip()
+    
+    
+
 
     genres = soup.find_all('span', class_='d_book')
     genre_book = [genre.find('a').text for genre in genres]
@@ -76,7 +77,7 @@ if __name__ == "__main__":
             response_page.raise_for_status()
             check_for_redirect(response)
             parse_book_page(soup)
-            dowloand_comments(response_page)
+            download_comments(response_page)
 
             if parse_book_page(soup):
                 tag = soup.find('div', class_='bookimage').find('img')['src']
