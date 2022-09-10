@@ -10,8 +10,7 @@ def check_for_redirect(response):
         raise requests.exceptions.HTTPError
 
 
-def download_comments(response):
-    soup = BeautifulSoup(response.text, 'lxml')
+def download_comments(soup):
     comments = soup.find_all('div', class_='texts')
     for comment_people in comments:
         comment = comment_people.find('span', class_='black').text
@@ -42,9 +41,6 @@ def parse_book_page(soup):
     title_book = title_book.strip()
     title_author = title_author.strip()
     
-    
-
-
     genres = soup.find_all('span', class_='d_book')
     genre_book = [genre.find('a').text for genre in genres]
 
@@ -77,7 +73,7 @@ if __name__ == "__main__":
             response_page.raise_for_status()
             check_for_redirect(response)
             parse_book_page(soup)
-            download_comments(response_page)
+            download_comments(soup)
 
             if parse_book_page(soup):
                 tag = soup.find('div', class_='bookimage').find('img')['src']
