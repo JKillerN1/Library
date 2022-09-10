@@ -10,12 +10,12 @@ def check_for_redirect(response):
         raise requests.exceptions.HTTPError
 
 
-def dowloand_comments(response):
+def download_comments(response):
     soup = BeautifulSoup(response.text, 'lxml')
     comments = soup.find_all('div', class_='texts')
-    for comment in comments:
-        com = comment.find('span', class_='black').text
-        return com
+    for comment_people in comments:
+        comment = comment_people.find('span', class_='black').text
+        return comment
 
 
 def download_book(response, id, filename, folder='books/'):
