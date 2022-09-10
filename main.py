@@ -72,13 +72,13 @@ if __name__ == "__main__":
             response.raise_for_status()
             response_page.raise_for_status()
             check_for_redirect(response)
-            parse_book_page(soup)
+            parse_book = parse_book_page(soup)
             download_comments(soup)
 
-            if parse_book_page(soup):
+            if parse_book:
                 tag = soup.find('div', class_='bookimage').find('img')['src']
-                download_book(response, book_num, parse_book_page(soup)[0], folder='books/')
-                download_picture(tag, parse_book_page(soup)[0], folder='images/')
+                download_book(response, book_num, parse_book[0], folder='books/')
+                download_picture(tag, parse_book[0], folder='images/')
 
         except requests.exceptions.HTTPError:
             print('такой книги не существует')
