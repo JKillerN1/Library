@@ -38,16 +38,16 @@ def download_picture(title_tag, filename, folder='images/'):
 def parse_book_page(soup):
 
     title_tag = soup.find('h1').text
-    title_book, title_avtor = title_tag.split(' :: ')
+    title_book, title_author = title_tag.split(' :: ')
     title_book = title_book.split()
     title_book = ' '.join(title_book)
-    title_avtor = title_avtor.split()
-    title_avtor = ' '.join(title_avtor)
+    title_author = title_author.split()
+    title_author = ' '.join(title_author)
 
     genres = soup.find_all('span', class_='d_book')
     genre_book = [genre.find('a').text for genre in genres]
 
-    return title_book, title_avtor, " ".join(genre_book)
+    return title_book, title_author, " ".join(genre_book)
 
 
 if __name__ == "__main__":
