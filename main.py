@@ -85,3 +85,4 @@ if __name__ == "__main__":
 
         except requests.exceptions.ConnectionError:
             print('прервано соединение')
+            time.sleep(10)
