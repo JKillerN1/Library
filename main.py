@@ -10,7 +10,7 @@ def check_for_redirect(response):
         raise requests.exceptions.HTTPError
 
 
-def download_comments(soup):
+def find_comments(soup):
     comments = soup.find_all('div', class_='texts')
     for comment_people in comments:
         comment = comment_people.find('span', class_='black').text
@@ -73,7 +73,7 @@ if __name__ == "__main__":
             response_page.raise_for_status()
             check_for_redirect(response)
             parse_book = parse_book_page(soup)
-            download_comments(soup)
+            find_comments(soup)
 
             if parse_book:
                 tag = soup.find('div', class_='bookimage').find('img')['src']
