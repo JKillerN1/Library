@@ -48,7 +48,7 @@ def parse_book_page(soup):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description='Напишите id книг, с какой по какую надо скачать')
     parser.add_argument('id', type=int)
     parser.add_argument('id2', type=int)
     args = parser.parse_args()
@@ -86,3 +86,10 @@ if __name__ == "__main__":
         except requests.exceptions.ConnectionError:
             print('прервано соединение')
             time.sleep(10)
+
+'''k=0
+for i in range(100,1000):
+    if i%7==0 and i%5!=0 and i%9!=0:
+        k+=1
+print(k)
+print(len(list(filter(lambda x: x % 7 == 0 and x % 5 != 0 and x % 9 != 0,range(100,1000)))))'''
