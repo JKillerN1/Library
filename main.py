@@ -49,8 +49,8 @@ def parse_book_page(soup):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Напишите id книг, с какой по какую надо скачать')
-    parser.add_argument('id', type=int)
-    parser.add_argument('id2', type=int)
+    parser.add_argument('id_first_book', type=int)
+    parser.add_argument('id_second_book', type=int)
     args = parser.parse_args()
 
     start_id = args.id
