@@ -42,9 +42,9 @@ def parse_book_page(soup):
     title_author = title_author.strip()
     
     genres = soup.find_all('span', class_='d_book')
-    genre_book = [genre.find('a').text for genre in genres]
+    genres_books = [genre.find('a').text for genre in genres]
 
-    return title_book, title_author, " ".join(genre_book)
+    return title_book, title_author, " ".join(genres_books)
 
 
 if __name__ == "__main__":
@@ -53,8 +53,8 @@ if __name__ == "__main__":
     parser.add_argument('id_second_book', type=int)
     args = parser.parse_args()
 
-    start_id = args.id
-    end_id = args.id2
+    start_id = args.id_first_book
+    end_id = args.id_second_book
 
     os.makedirs("books", exist_ok=True)
     os.makedirs("images", exist_ok=True)
