@@ -19,7 +19,7 @@ def find_comments(soup):
 
 def download_book(response, id, filename, folder='books/'):
     file_name = filename
-    filename_book = os.path.join(folder, f'{id}.{file_name}.txt')
+    filename_book = os.path.join(folder, f'{id} {file_name}.txt')
     with open(filename_book, 'w', encoding="utf-8") as file:
         file.write(response.text)
 
