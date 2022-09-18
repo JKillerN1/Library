@@ -12,9 +12,11 @@ def check_for_redirect(response):
 
 def find_comments(soup):
     comments = soup.find_all('div', class_='texts')
+    comments_list=[]
     for comment_people in comments:
         comment = comment_people.find('span', class_='black').text
-        return comment
+        comments_list.append(comment)
+    return comments_list
 
 
 def download_book(response, id, filename, folder='books/'):
@@ -74,7 +76,6 @@ if __name__ == "__main__":
             check_for_redirect(response)
             parse_book = parse_book_page(soup)
             find_comments(soup)
-
             if parse_book:
                 tag = soup.find('div', class_='bookimage').find('img')['src']
                 download_book(response, book_num, parse_book[0], folder='books/')
@@ -87,9 +88,3 @@ if __name__ == "__main__":
             print('прервано соединение')
             time.sleep(10)
 
-'''k=0
-for i in range(100,1000):
-    if i%7==0 and i%5!=0 and i%9!=0:
-        k+=1
-print(k)
-print(len(list(filter(lambda x: x % 7 == 0 and x % 5 != 0 and x % 9 != 0,range(100,1000)))))'''
