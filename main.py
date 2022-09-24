@@ -12,11 +12,11 @@ def check_for_redirect(response):
 
 def find_comments(soup):
     comments = soup.find_all('div', class_='texts')
-    comments_list=[]
+    all_comments=[]
     for comment_people in comments:
         comment = comment_people.find('span', class_='black').text
-        comments_list.append(comment)
-    return comments_list
+        all_comments.append(comment)
+    return all_comments
 
 
 def download_book(response, id, filename, folder='books/'):
@@ -27,9 +27,8 @@ def download_book(response, id, filename, folder='books/'):
 
 
 def download_picture(title_tag, filename, folder='images/'):
-    
-    download_url = 'https://tululu.org'
-    response = requests.get(urljoin(download_url, filename))
+
+    response = requests.get(urljoin('https://tululu.org', filename))
     picture_name = title_tag.split('/')[2]
     path = os.path.join(folder, picture_name)
     with open(path, 'wb') as file:
@@ -51,8 +50,8 @@ def parse_book_page(soup):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Напишите id книг, с какой по какую надо скачать')
-    parser.add_argument('id_first_book', type=int)
-    parser.add_argument('id_second_book', type=int)
+    parser.add_argument('start_id', type=int)
+    parser.add_argument('end_id', type=int)
     args = parser.parse_args()
 
     start_id = args.id_first_book
@@ -74,12 +73,12 @@ if __name__ == "__main__":
             response.raise_for_status()
             response_page.raise_for_status()
             check_for_redirect(response)
-            parse_book = parse_book_page(soup)
+            disassembled_book = parse_book_page(soup)
             find_comments(soup)
-            if parse_book:
+            if disassembled_book:
                 tag = soup.find('div', class_='bookimage').find('img')['src']
-                download_book(response, book_num, parse_book[0], folder='books/')
-                download_picture(tag, parse_book[0], folder='images/')
+                download_book(response, book_num, disassembled_book[0], folder='books/')
+                download_picture(tag, disassembled_book[0], folder='images/')
 
         except requests.exceptions.HTTPError:
             print('такой книги не существует')
