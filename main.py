@@ -45,7 +45,10 @@ def parse_book_page(soup):
     genres = soup.find_all('span', class_='d_book')
     genres_books = [genre.find('a').text for genre in genres]
 
-    return title_book, title_author, " ".join(genres_books)
+    find_comments(soup)
+    tag = soup.find('div', class_='bookimage').find('img')['src']
+
+    return title_book, title_author, " ".join(genres_books), tag
 
 
 if __name__ == "__main__":
@@ -54,8 +57,8 @@ if __name__ == "__main__":
     parser.add_argument('end_id', type=int)
     args = parser.parse_args()
 
-    start_id = args.id_first_book
-    end_id = args.id_second_book
+    start_id = args.start_id
+    end_id = args.end_id
 
     os.makedirs("books", exist_ok=True)
     os.makedirs("images", exist_ok=True)
@@ -67,18 +70,17 @@ if __name__ == "__main__":
         params = {"id": book_num}
         response = requests.get(text_book_page_url, params)
         response_page = requests.get(book_page_url.format(id=params['id']))
-
         try:
             soup = BeautifulSoup(response_page.text, 'lxml')
             response.raise_for_status()
             response_page.raise_for_status()
             check_for_redirect(response)
             disassembled_book = parse_book_page(soup)
-            find_comments(soup)
+            books_name = disassembled_book[0]
+            url_picture_books = disassembled_book[-1]
             if disassembled_book:
-                tag = soup.find('div', class_='bookimage').find('img')['src']
-                download_book(response, book_num, disassembled_book[0], folder='books/')
-                download_picture(tag, disassembled_book[0], folder='images/')
+                download_book(response, book_num, books_name, folder='books/')
+                download_picture(url_picture_books, books_name, folder='images/')
 
         except requests.exceptions.HTTPError:
             print('такой книги не существует')
