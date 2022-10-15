@@ -28,7 +28,7 @@ def download_book(response, id, filename, folder='books/'):
 
 def download_picture(title_tag, filename, folder='images/'):
 
-    response = requests.get(urljoin('https://tululu.org', filename))
+    response = requests.get(urljoin('http://tululu.org', filename))
     picture_name = title_tag.split('/')[2]
     path = os.path.join(folder, picture_name)
     with open(path, 'wb') as file:
