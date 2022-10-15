@@ -21,8 +21,8 @@ def find_comments(soup):
 
 def download_book(response, id, filename, folder='books/'):
     file_name = filename
-    filename_book = os.path.join(folder, f'{id} {file_name}.txt')
-    with open(filename_book, 'w', encoding="utf-8") as file:
+    filepath_book = os.path.join(folder, f'{id} {file_name}.txt')
+    with open(filepath_book, 'w', encoding="utf-8") as file:
         file.write(response.text)
 
 
@@ -79,7 +79,7 @@ if __name__ == "__main__":
             dict_keys = ['Book_name','Author','Genre','Picture_url']
             dict_book_information={}
             for i in range(4):
-                s[dict_keys[i]]=disassembled_book[i]
+                dict_book_information[dict_keys[i]]=disassembled_book[i]
             books_name = dict_book_information["Book_name"]
             picture_books_url = dict_book_information["Picture_url"]
             if disassembled_book:
