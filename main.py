@@ -46,9 +46,9 @@ def parse_book_page(soup):
     genres_books = [genre.find('a').text for genre in genres]
 
     find_comments(soup)
-    tag = soup.find('div', class_='bookimage').find('img')['src']
+    picture_url = soup.find('div', class_='bookimage').find('img')['src']
 
-    return title_book, title_author, " ".join(genres_books), tag
+    return title_book, title_author, " ".join(genres_books), picture_url
 
 
 if __name__ == "__main__":
@@ -77,10 +77,10 @@ if __name__ == "__main__":
             check_for_redirect(response)
             disassembled_book = parse_book_page(soup)
             books_name = disassembled_book[0]
-            url_picture_books = disassembled_book[-1]
+            picture_books_url = disassembled_book[-1]
             if disassembled_book:
                 download_book(response, book_num, books_name, folder='books/')
-                download_picture(url_picture_books, books_name, folder='images/')
+                download_picture(picture_books_url, books_name, folder='images/')
 
         except requests.exceptions.HTTPError:
             print('такой книги не существует')
