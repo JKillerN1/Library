@@ -76,8 +76,12 @@ if __name__ == "__main__":
             response_page.raise_for_status()
             check_for_redirect(response)
             disassembled_book = parse_book_page(soup)
-            books_name = disassembled_book[0]
-            picture_books_url = disassembled_book[-1]
+            dict_keys = ['Book_name','Author','Genre','Picture_url']
+            dict_book_information={}
+            for i in range(4):
+                s[dict_keys[i]]=disassembled_book[i]
+            books_name = dict_book_information["Book_name"]
+            picture_books_url = dict_book_information["Picture_url"]
             if disassembled_book:
                 download_book(response, book_num, books_name, folder='books/')
                 download_picture(picture_books_url, books_name, folder='images/')
