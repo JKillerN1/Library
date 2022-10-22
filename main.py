@@ -3,6 +3,7 @@ import argparse
 from bs4 import BeautifulSoup
 import os
 from urllib.parse import urljoin
+import json
 
 
 def check_for_redirect(response):
@@ -46,10 +47,17 @@ def parse_book_page(soup):
     genres = soup.find_all('span', class_='d_book')
     genres_books = [genre.find('a').text for genre in genres]
 
-    find_comments(soup)
     picture_url = soup.find('div', class_='bookimage').find('img')['src']
 
-    return title_book, title_author, " ".join(genres_books), picture_url
+    book_params = {
+        "title": title_book,
+        "author": title_author,
+        "genres": " ".join(genres_books),
+        "pic_url": picture_url,
+        "comments": find_comments(soup),
+    }
+
+    return book_params
 
 
 if __name__ == "__main__":
@@ -77,20 +85,17 @@ if __name__ == "__main__":
             response_page.raise_for_status()
             check_for_redirect(response)
             disassembled_book = parse_book_page(soup)
-            dict_keys = ['Book_name','Author','Genre','Picture_url']
-            dict_book_information={}
-            for i in range(4):
-                dict_book_information[dict_keys[i]]=disassembled_book[i]
-            books_name = dict_book_information["Book_name"]
-            picture_books_url = dict_book_information["Picture_url"]
+            
+            books_name = disassembled_book["title"]
+            picture_books_url = disassembled_book["pic_url"]
             if disassembled_book:
                 download_book(response, book_num, books_name, folder='books/')
-                download_picture(picture_books_url, books_name, folder='images/')
-
+                tag = soup.find('div', class_='bookimage').find('img')['src']
+                download_picture(tag, picture_books_url, folder='images/')
+            
         except requests.exceptions.HTTPError:
             print('такой книги не существует')
 
         except requests.exceptions.ConnectionError:
             print('прервано соединение')
             time.sleep(10)
-
