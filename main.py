@@ -27,9 +27,9 @@ def download_book(response, id, filename, folder='books/'):
         file.write(response.text)
 
 
-def download_picture(title_tag, filename, folder='images/'):
+def download_picture(title_tag, filename, book_url, folder='images/'):
 
-    response = requests.get(urljoin('http://tululu.org', filename))
+    response = requests.get(urljoin(book_url, filename))
     response.raise_for_status()
     picture_name = title_tag.split('/')[2]
     path = os.path.join(folder, picture_name)
@@ -74,6 +74,7 @@ if __name__ == "__main__":
 
     text_book_page_url = "https://tululu.org/txt.php"
     book_page_url = 'https://tululu.org/b{id}/'
+    book_url = 'http://tululu.org'
 
     for book_num in range(start_id, end_id):
         params = {"id": book_num}
@@ -91,7 +92,7 @@ if __name__ == "__main__":
             if disassembled_book:
                 download_book(response, book_num, books_name, folder='books/')
                 tag = soup.find('div', class_='bookimage').find('img')['src']
-                download_picture(tag, picture_books_url, folder='images/')
+                download_picture(tag, picture_books_url, book_url, folder='images/')
             
         except requests.exceptions.HTTPError:
             print('такой книги не существует')
