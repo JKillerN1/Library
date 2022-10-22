@@ -21,14 +21,15 @@ def find_comments(soup):
 
 def download_book(response, id, filename, folder='books/'):
     file_name = filename
-    filepath_book = os.path.join(folder, f'{id} {file_name}.txt')
-    with open(filepath_book, 'w', encoding="utf-8") as file:
+    book_file_path = os.path.join(folder, f'{id} {file_name}.txt')
+    with open(book_file_path, 'w', encoding="utf-8") as file:
         file.write(response.text)
 
 
 def download_picture(title_tag, filename, folder='images/'):
 
     response = requests.get(urljoin('http://tululu.org', filename))
+    response.raise_for_status()
     picture_name = title_tag.split('/')[2]
     path = os.path.join(folder, picture_name)
     with open(path, 'wb') as file:
