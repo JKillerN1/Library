@@ -1,3 +1,4 @@
+import pathlib
 import requests
 import argparse
 from bs4 import BeautifulSoup
@@ -12,10 +13,10 @@ def check_for_redirect(response):
 
 
 def find_comments(soup):
-    comments = soup.find_all('div', class_='texts')
-    all_comments=[]
+    comments = soup.select("div.texts")
+    all_comments = []
     for comment_people in comments:
-        comment = comment_people.find('span', class_='black').text
+        comment = comment_people.select_one('span.black').text
         all_comments.append(comment)
     return all_comments
 
@@ -23,12 +24,12 @@ def find_comments(soup):
 def download_book(response, id, filename, folder='books/'):
     file_name = filename
     book_file_path = os.path.join(folder, f'{id} {file_name}.txt')
-    with open(book_file_path, 'w', encoding="utf-8") as file:
-        file.write(response.text)
+
+    with open(book_file_path, 'w+', encoding="utf-8") as file:
+        file.write(response.text.replace(" ", ""))
 
 
 def download_picture(title_tag, filename, book_url, folder='images/'):
-
     response = requests.get(urljoin(book_url, filename))
     response.raise_for_status()
     picture_name = title_tag.split('/')[2]
@@ -38,36 +39,29 @@ def download_picture(title_tag, filename, book_url, folder='images/'):
 
 
 def parse_book_page(soup):
-
-    title_tag = soup.find('h1').text
+    title_tag = soup.select_one('h1').text
     title_book, title_author = title_tag.split(' :: ')
     title_book = title_book.strip()
     title_author = title_author.strip()
-    
-    genres = soup.find_all('span', class_='d_book')
-    genres_books = [genre.find('a').text for genre in genres]
 
-    picture_url = soup.find('div', class_='bookimage').find('img')['src']
+    genres = soup.select('span.d_book')
+    genres_books = [genre.select_one('a').text for genre in genres]
 
-    book_params = {
-        "title": title_book,
-        "author": title_author,
-        "genres": " ".join(genres_books),
-        "pic_url": picture_url,
-        "comments": find_comments(soup),
-    }
+    picture_url = soup.select_one("div.bookimage img")['src']
 
-    return book_params
+    return title_book, title_author, " ".join(genres_books),picture_url
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Напишите id книг, с какой по какую надо скачать')
-    parser.add_argument('start_id', type=int)
-    parser.add_argument('end_id', type=int)
+    parser.add_argument('start_page', type=int)
+    parser.add_argument('end_page', type=int)
+
+
     args = parser.parse_args()
 
-    start_id = args.start_id
-    end_id = args.end_id
+    start_page = args.start_page
+    end_page = args.end_page
 
     os.makedirs("books", exist_ok=True)
     os.makedirs("images", exist_ok=True)
@@ -76,27 +70,82 @@ if __name__ == "__main__":
     book_page_url = 'https://tululu.org/b{id}/'
     book_url = 'http://tululu.org'
 
-    for book_num in range(start_id, end_id):
-        params = {"id": book_num}
-        response = requests.get(text_book_page_url, params)
-        response_page = requests.get(book_page_url.format(id=params['id']))
-        try:
-            soup = BeautifulSoup(response_page.text, 'lxml')
-            response.raise_for_status()
-            response_page.raise_for_status()
-            check_for_redirect(response)
-            disassembled_book = parse_book_page(soup)
-            
-            books_name = disassembled_book["title"]
-            picture_books_url = disassembled_book["pic_url"]
-            if disassembled_book:
-                download_book(response, book_num, books_name, folder='books/')
-                tag = soup.find('div', class_='bookimage').find('img')['src']
-                download_picture(tag, picture_books_url, book_url, folder='images/')
-            
-        except requests.exceptions.HTTPError:
-            print('такой книги не существует')
+    if (args.dest_folder):
+        print(pathlib.Path().resolve())
 
-        except requests.exceptions.ConnectionError:
-            print('прервано соединение')
-            time.sleep(10)
+    for k in range(start_page, end_page):
+        url = f'https://tululu.org/l55/{k}/'
+        response = requests.get(url)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, 'lxml')
+
+        a = []
+        for i in soup.select('a'):
+            b = i.get('href')
+            if '/b' in b:
+                a.append(b)
+
+        for i in a:
+            if i != '/b239/':
+                a.remove(i)
+            else:
+                break
+
+        d = []
+        for i in a:
+            if i not in d:
+                d.append(i)
+
+        for i in range(3, 7):
+
+            bookUrl = f'https://tululu.org{d[i]}'
+            bookurl2 = f'https://tululu.org/txt.php?id={d[i].split("/")[1].lstrip("b")}'
+            text_book_page_url = f"https://tululu.org/txt.php/id={d[i]}"
+
+            try:
+                response1 = requests.get(bookUrl)
+                response1.raise_for_status()
+                soup1 = BeautifulSoup(response1.text, 'lxml')
+
+                disassembled_book = parse_book_page(soup1)
+
+                response2 = requests.get(bookurl2)
+                response2.raise_for_status()
+
+                if disassembled_book:
+
+                    book_params = {
+                        "title": disassembled_book[0],
+                        "author": disassembled_book[1],
+                        "pic_url": disassembled_book[3],
+                        "comments": find_comments(soup1),
+                        "genres": disassembled_book[2],
+                    }
+
+                    if book_params:
+                        json_object = json.dumps(book_params, ensure_ascii=False)
+                        if not args.json_path:
+                            with open(f"{pathlib.Path().resolve()}\\books_params.json", "a",
+                                      encoding="utf-8") as file:
+                                file.write(json_object+'\n')
+                        else:
+                            with open(f"{args.json_path}\\books_params.json", "a",
+                                      encoding="utf-8") as file:
+                                file.write(json_object+'\n')
+
+                        download_book(response2, d[i].split("/")[1].lstrip("b"), book_params["title"], folder='books/')
+
+                        tag = soup1.select_one('div.bookimage img')['src']
+                        download_picture(tag, book_params["pic_url"], book_url, folder='images/')
+
+            except FileNotFoundError:
+                print('такой книги не существует')
+
+
+
+
+
+
+
+
+
