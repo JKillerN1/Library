@@ -57,6 +57,10 @@ if __name__ == "__main__":
     parser.add_argument('start_page', type=int)
     parser.add_argument('end_page', type=int)
 
+    parser.add_argument("--dest_folder",action="store_true")
+    parser.add_argument("--skip_imgs",action="store_true")
+    parser.add_argument("--skip_txt",action="store_true")
+    parser.add_argument("--json_path",action="store_true",default=pathlib.Path().resolve())
 
     args = parser.parse_args()
 
@@ -133,19 +137,13 @@ if __name__ == "__main__":
                                       encoding="utf-8") as file:
                                 file.write(json_object+'\n')
 
-                        download_book(response2, d[i].split("/")[1].lstrip("b"), book_params["title"], folder='books/')
+                        if not args.skip_txt:
+                            download_book(response2, d[i].split("/")[1].lstrip("b"), book_params["title"], folder='books/')
 
-                        tag = soup1.select_one('div.bookimage img')['src']
-                        download_picture(tag, book_params["pic_url"], book_url, folder='images/')
+                        if not args.skip_imgs:
+                            tag = soup1.select_one('div.bookimage img')['src']
+                            download_picture(tag, book_params["pic_url"], book_url, folder='images/')
 
             except FileNotFoundError:
                 print('такой книги не существует')
-
-
-
-
-
-
-
-
 
