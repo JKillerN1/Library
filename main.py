@@ -79,34 +79,33 @@ if __name__ == "__main__":
         logging.basicConfig(level=logging.INFO)
         logging.info(pathlib.Path().resolve())
 
-    for k in range(start_page, end_page):
-        url = f'https://tululu.org/l55/{k}/'
+    for page in range(start_page, end_page):
+        url = f'https://tululu.org/l55/{page}/'
         response = requests.get(url)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'lxml')
 
-        a = []
-        for i in soup.select('a'):
-            b = i.get('href')
-            if '/b' in b:
-                a.append(b)
+        book_number = []
+        for number in soup.select('a'):
+            if '/b' in number.get('href'):
+                book_number.append(number.get('href'))
 
-        for i in a:
-            if i != '/b239/':
-                a.remove(i)
+        for number in book_number:
+            if number != '/b239/':
+                book_number.remove(number)
             else:
                 break
 
-        d = []
-        for i in a:
-            if i not in d:
-                d.append(i)
+        nonrepeating_book_number = []
+        for number in book_number:
+            if number not in nonrepeating_book_number:
+                nonrepeating_book_number.append(number)
 
-        for i in range(3, 7):
+        for number in range(3, 7):
 
-            bookUrl = f'https://tululu.org{d[i]}'
-            bookurl2 = f'https://tululu.org/txt.php?id={d[i].split("/")[1].lstrip("b")}'
-            text_book_page_url = f"https://tululu.org/txt.php/id={d[i]}"
+            bookUrl = f'https://tululu.org{nonrepeating_book_number[number]}'
+            bookurl2 = f'https://tululu.org/txt.php?id={nonrepeating_book_number[i].split("/")[1].lstrip("b")}'
+            text_book_page_url = f"https://tululu.org/txt.php/id={nonrepeating_book_number[number]}"
 
             try:
                 response1 = requests.get(bookUrl)
@@ -140,7 +139,7 @@ if __name__ == "__main__":
                                 file.write(json_object+'\n')
 
                         if not args.skip_txt:
-                            download_book(response2, d[i].split("/")[1].lstrip("b"), book_params["title"], folder='books/')
+                            download_book(response2, nonrepeating_book_number[i].split("/")[1].lstrip("b"), book_params["title"], folder='books/')
 
                         if not args.skip_imgs:
                             tag = soup1.select_one('div.bookimage img')['src']
