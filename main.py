@@ -103,19 +103,19 @@ if __name__ == "__main__":
 
         for number in range(3, 7):
 
-            bookUrl = f'https://tululu.org{nonrepeating_book_number[number]}'
-            bookurl2 = f'https://tululu.org/txt.php?id={nonrepeating_book_number[i].split("/")[1].lstrip("b")}'
+            bookUrl_page = f'https://tululu.org{nonrepeating_book_number[number]}'
+            bookurl = f'https://tululu.org/txt.php?id={nonrepeating_book_number[number].split("/")[1].lstrip("b")}'
             text_book_page_url = f"https://tululu.org/txt.php/id={nonrepeating_book_number[number]}"
 
             try:
-                response1 = requests.get(bookUrl)
-                response1.raise_for_status()
-                soup1 = BeautifulSoup(response1.text, 'lxml')
+                response_page = requests.get(bookUrl_page)
+                response_page.raise_for_status()
+                soup_book = BeautifulSoup(response_page.text, 'lxml')
 
-                disassembled_book = parse_book_page(soup1)
+                disassembled_book = parse_book_page(soup_book)
 
-                response2 = requests.get(bookurl2)
-                response2.raise_for_status()
+                response_book = requests.get(bookurl)
+                response_book.raise_for_status()
 
                 if disassembled_book:
 
@@ -123,7 +123,7 @@ if __name__ == "__main__":
                         "title": disassembled_book[0],
                         "author": disassembled_book[1],
                         "pic_url": disassembled_book[3],
-                        "comments": find_comments(soup1),
+                        "comments": find_comments(soup_book),
                         "genres": disassembled_book[2],
                     }
 
@@ -139,10 +139,10 @@ if __name__ == "__main__":
                                 file.write(json_object+'\n')
 
                         if not args.skip_txt:
-                            download_book(response2, nonrepeating_book_number[i].split("/")[1].lstrip("b"), book_params["title"], folder='books/')
+                            download_book(response_book, nonrepeating_book_number[i].split("/")[1].lstrip("b"), book_params["title"], folder='books/')
 
                         if not args.skip_imgs:
-                            tag = soup1.select_one('div.bookimage img')['src']
+                            tag = soup_book.select_one('div.bookimage img')['src']
                             download_picture(tag, book_params["pic_url"], book_url, folder='images/')
 
             except FileNotFoundError:
