@@ -57,10 +57,10 @@ if __name__ == "__main__":
     parser.add_argument('start_page', type=int)
     parser.add_argument('end_page', type=int)
 
-    parser.add_argument("--dest_folder",action="store_true")
-    parser.add_argument("--skip_imgs",action="store_true")
-    parser.add_argument("--skip_txt",action="store_true")
-    parser.add_argument("--json_path",action="store_true",default=pathlib.Path().resolve())
+    parser.add_argument("--dest_folder",action="store_true", help='путь к каталогу с результатами парсинга: картинкам, книгам, JSON')
+    parser.add_argument("--skip_imgs",action="store_true", help='не скачивать картинки')
+    parser.add_argument("--skip_txt",action="store_true", help='не скачивать книги')
+    parser.add_argument("--json_path",action="store_true",default=pathlib.Path().resolve(), help='указать свой путь к *.json файлу с результатами')
 
     args = parser.parse_args()
 
