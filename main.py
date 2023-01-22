@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 import os
 from urllib.parse import urljoin
 import json
+import logging
 
 
 def check_for_redirect(response):
@@ -75,7 +76,8 @@ if __name__ == "__main__":
     book_url = 'http://tululu.org'
 
     if (args.dest_folder):
-        print(pathlib.Path().resolve())
+        logging.basicConfig(level=logging.INFO)
+        logging.info(pathlib.Path().resolve())
 
     for k in range(start_page, end_page):
         url = f'https://tululu.org/l55/{k}/'
