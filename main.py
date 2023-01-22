@@ -102,9 +102,9 @@ if __name__ == "__main__":
                 nonrepeating_book_number.append(number)
 
         for number in range(3, 7):
-
+            param = {'id': nonrepeating_book_number[number].split("/")[1].lstrip("b")}
             bookUrl_page = f'https://tululu.org{nonrepeating_book_number[number]}'
-            bookurl = f'https://tululu.org/txt.php?id={nonrepeating_book_number[number].split("/")[1].lstrip("b")}'
+            bookurl = f'https://tululu.org/txt.php'
             text_book_page_url = f"https://tululu.org/txt.php/id={nonrepeating_book_number[number]}"
 
             try:
@@ -114,7 +114,7 @@ if __name__ == "__main__":
 
                 disassembled_book = parse_book_page(soup_book)
 
-                response_book = requests.get(bookurl)
+                response_book = requests.get(bookurl, params=param)
                 response_book.raise_for_status()
 
                 if disassembled_book:
@@ -139,7 +139,7 @@ if __name__ == "__main__":
                                 file.write(json_object+'\n')
 
                         if not args.skip_txt:
-                            download_book(response_book, nonrepeating_book_number[i].split("/")[1].lstrip("b"), book_params["title"], folder='books/')
+                            download_book(response_book, nonrepeating_book_number[number].split("/")[1].lstrip("b"), book_params["title"], folder='books/')
 
                         if not args.skip_imgs:
                             tag = soup_book.select_one('div.bookimage img')['src']
