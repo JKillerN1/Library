@@ -50,7 +50,15 @@ def parse_book_page(soup):
 
     picture_url = soup.select_one("div.bookimage img")['src']
 
-    return title_book, title_author, " ".join(genres_books),picture_url
+    book_params = {
+        "title": title_book,
+        "author": title_author,
+        "pic_url": picture_url,
+        "comments": find_comments(soup),
+        "genres": " ".join(genres_books),
+    }
+
+    return book_params
 
 
 if __name__ == "__main__":
@@ -118,32 +126,22 @@ if __name__ == "__main__":
                 response_book.raise_for_status()
 
                 if disassembled_book:
+                    json_object = json.dumps(disassembled_book, ensure_ascii=False)
+                    if not args.json_path:
+                        with open(f"{pathlib.Path().resolve()}\\books_params.json", "a",
+                                  encoding="utf-8") as file:
+                            file.write(json_object+'\n')
+                    else:
+                        with open(f"{args.json_path}\\books_params.json", "a",
+                                  encoding="utf-8") as file:
+                            file.write(json_object+'\n')
 
-                    book_params = {
-                        "title": disassembled_book[0],
-                        "author": disassembled_book[1],
-                        "pic_url": disassembled_book[3],
-                        "comments": find_comments(soup_book),
-                        "genres": disassembled_book[2],
-                    }
+                    if not args.skip_txt:
+                        download_book(response_book, nonrepeating_book_number[number].split("/")[1].lstrip("b"), disassembled_book["title"], folder='books/')
 
-                    if book_params:
-                        json_object = json.dumps(book_params, ensure_ascii=False)
-                        if not args.json_path:
-                            with open(f"{pathlib.Path().resolve()}\\books_params.json", "a",
-                                      encoding="utf-8") as file:
-                                file.write(json_object+'\n')
-                        else:
-                            with open(f"{args.json_path}\\books_params.json", "a",
-                                      encoding="utf-8") as file:
-                                file.write(json_object+'\n')
-
-                        if not args.skip_txt:
-                            download_book(response_book, nonrepeating_book_number[number].split("/")[1].lstrip("b"), book_params["title"], folder='books/')
-
-                        if not args.skip_imgs:
-                            tag = soup_book.select_one('div.bookimage img')['src']
-                            download_picture(tag, book_params["pic_url"], book_url, folder='images/')
+                    if not args.skip_imgs:
+                        tag = soup_book.select_one('div.bookimage img')['src']
+                        download_picture(tag, disassembled_book["pic_url"], book_url, folder='images/')
 
             except FileNotFoundError:
                 print('такой книги не существует')
