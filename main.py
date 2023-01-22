@@ -147,3 +147,10 @@ if __name__ == "__main__":
 
             except FileNotFoundError:
                 print('такой книги не существует')
+
+            except requests.exceptions.HTTPError:
+                print('такой книги не существует')
+
+            except requests.exceptions.ConnectionError:
+                print('прервано соединение')
+                time.sleep(10)
