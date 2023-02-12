@@ -6,6 +6,50 @@ import os
 from urllib.parse import urljoin
 import json
 import logging
+import time
+
+def exceptions(disassembled_book, book_url):
+    write_book_param(disassembled_book)
+
+    if not args.skip_txt:
+        download_book(response_book, find_number_book(soup)[number].split("/")[1].lstrip("b"),
+                      disassembled_book["title"], folder='books/')
+
+    if not args.skip_imgs:
+        tag = soup_book.select_one('div.bookimage img')['src']
+        download_picture(tag, disassembled_book["pic_url"], book_url, folder='images/')
+    
+
+def find_number_book(soup):
+    book_number = []
+    for number in soup.select('a'):
+        if '/b' in number.get('href'):
+            book_number.append(number.get('href'))
+
+    for number in book_number:
+        if number != '/b239/':
+            book_number.remove(number)
+        else:
+            break
+
+    nonrepeating_book_number = []
+    for number in book_number:
+        if number not in nonrepeating_book_number:
+            nonrepeating_book_number.append(number)
+    return nonrepeating_book_number
+
+
+def write_book_param(disassembled_book):
+    if not args.json_path:
+        with open(f"{pathlib.Path().resolve()}\\books_params.json", "a",
+                  encoding="utf-8") as file:
+            json.dump(disassembled_book, file, ensure_ascii=False)
+            file.write("\n")
+    else:
+        with open(f"{args.json_path}\\books_params.json", "a",
+                  encoding="utf-8") as file:
+            json.dump(disassembled_book, file, ensure_ascii=False)
+            file.write("\n")
 
 
 def check_for_redirect(response):
@@ -65,7 +109,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Напишите id книг, с какой по какую надо скачать')
     parser.add_argument('start_page', type=int)
     parser.add_argument('end_page', type=int)
-
     parser.add_argument("--dest_folder", action="store_true", help='путь к каталогу с результатами парсинга: картинкам, книгам, JSON')
     parser.add_argument("--skip_imgs", action="store_true", help='не скачивать картинки')
     parser.add_argument("--skip_txt", action="store_true", help='не скачивать книги')
@@ -87,68 +130,36 @@ if __name__ == "__main__":
         logging.basicConfig(level=logging.INFO)
         logging.info(pathlib.Path().resolve())
 
-    for page in range(start_page, end_page):
-        url = f'https://tululu.org/l55/{page}/'
-        response = requests.get(url)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, 'lxml')
-
-        book_number = []
-        for number in soup.select('a'):
-            if '/b' in number.get('href'):
-                book_number.append(number.get('href'))
-
-        for number in book_number:
-            if number != '/b239/':
-                book_number.remove(number)
-            else:
-                break
-
-        nonrepeating_book_number = []
-        for number in book_number:
-            if number not in nonrepeating_book_number:
-                nonrepeating_book_number.append(number)
-
-        for number in range(3, 7):
-            param = {'id': nonrepeating_book_number[number].split("/")[1].lstrip("b")}
-            bookUrl_page = f'https://tululu.org{nonrepeating_book_number[number]}'
-            bookurl = f'https://tululu.org/txt.php'
-            text_book_page_url = f"https://tululu.org/txt.php/id={nonrepeating_book_number[number]}"
-
+    try:
+        for page in range(start_page, end_page):
+            url = f'https://tululu.org/l55/{page}/'
+            response = requests.get(url)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, 'lxml')
             try:
-                response_page = requests.get(bookUrl_page)
-                response_page.raise_for_status()
-                soup_book = BeautifulSoup(response_page.text, 'lxml')
+                for number in range(3, 7):
+                    param = {'id': find_number_book(soup)[number].split("/")[1].lstrip("b")}
+                    bookUrl_page = f'https://tululu.org{find_number_book(soup)[number]}'
+                    bookurl = f'https://tululu.org/txt.php'
+                    
+                    response_page = requests.get(bookUrl_page)
+                    response_page.raise_for_status()
+                    response_book = requests.get(bookurl, params=param)
+                    response_book.raise_for_status()
 
-                disassembled_book = parse_book_page(soup_book)
-
-                response_book = requests.get(bookurl, params=param)
-                response_book.raise_for_status()
-
-                if disassembled_book:
-                    json_object = json.dumps(disassembled_book, ensure_ascii=False)
-                    if not args.json_path:
-                        with open(f"{pathlib.Path().resolve()}\\books_params.json", "a",
-                                  encoding="utf-8") as file:
-                            file.write(json_object+'\n')
-                    else:
-                        with open(f"{args.json_path}\\books_params.json", "a",
-                                  encoding="utf-8") as file:
-                            file.write(json_object+'\n')
-
-                    if not args.skip_txt:
-                        download_book(response_book, nonrepeating_book_number[number].split("/")[1].lstrip("b"), disassembled_book["title"], folder='books/')
-
-                    if not args.skip_imgs:
-                        tag = soup_book.select_one('div.bookimage img')['src']
-                        download_picture(tag, disassembled_book["pic_url"], book_url, folder='images/')
-
+                    soup_book = BeautifulSoup(response_page.text, 'lxml')
+    
+                    disassembled_book = parse_book_page(soup_book)
+    
+                    if disassembled_book:
+                        exceptions(disassembled_book, book_url)
+    
             except FileNotFoundError:
                 print('такой книги не существует')
-
+    
             except requests.exceptions.HTTPError:
                 print('такой книги не существует')
 
-            except requests.exceptions.ConnectionError:
-                print('прервано соединение')
-                time.sleep(10)
+    except requests.exceptions.ConnectionError:
+        print('прервано соединение')
+        time.sleep(5)
