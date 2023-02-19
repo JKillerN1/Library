@@ -12,7 +12,7 @@ def exceptions(disassembled_book, book_url):
     write_book_param(disassembled_book)
 
     if not args.skip_txt:
-        download_book(response_book, find_number_book(soup)[number].split("/")[1].lstrip("b"),
+        download_book(response_book, find_book_numbers(soup)[number].split("/")[1].lstrip("b"),
                       disassembled_book["title"], folder='books/')
 
     if not args.skip_imgs:
@@ -20,23 +20,23 @@ def exceptions(disassembled_book, book_url):
         download_picture(tag, disassembled_book["pic_url"], book_url, folder='images/')
     
 
-def find_number_book(soup):
-    book_number = []
+def find_book_numbers(soup):
+    book_numbers = []
     for number in soup.select('a'):
         if '/b' in number.get('href'):
-            book_number.append(number.get('href'))
+            book_numbers.append(number.get('href'))
 
-    for number in book_number:
+    for number in book_numbers:
         if number != '/b239/':
-            book_number.remove(number)
+            book_numbers.remove(number)
         else:
             break
 
-    nonrepeating_book_number = []
-    for number in book_number:
-        if number not in nonrepeating_book_number:
-            nonrepeating_book_number.append(number)
-    return nonrepeating_book_number
+    nonrepeating_book_numbers = []
+    for number in book_numbers:
+        if number not in nonrepeating_book_numbers:
+            nonrepeating_book_numbers.append(number)
+    return nonrepeating_book_numbers
 
 
 def write_book_param(disassembled_book):
@@ -60,8 +60,8 @@ def check_for_redirect(response):
 def find_comments(soup):
     comments = soup.select("div.texts")
     all_comments = []
-    for comment_people in comments:
-        comment = comment_people.select_one('span.black').text
+    for comment in comments:
+        comment = comment.select_one('span.black').text
         all_comments.append(comment)
     return all_comments
 
@@ -107,8 +107,8 @@ def parse_book_page(soup):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Напишите id книг, с какой по какую надо скачать')
-    parser.add_argument('start_page', type=int)
-    parser.add_argument('end_page', type=int)
+    parser.add_argument('start_page', type=int, help='странциа с которой нужно начинать скачивать книги')
+    parser.add_argument('end_page', type=int, help='странциа по которую нужно скачивать книги')
     parser.add_argument("--dest_folder", action="store_true", help='путь к каталогу с результатами парсинга: картинкам, книгам, JSON')
     parser.add_argument("--skip_imgs", action="store_true", help='не скачивать картинки')
     parser.add_argument("--skip_txt", action="store_true", help='не скачивать книги')
@@ -138,8 +138,9 @@ if __name__ == "__main__":
             soup = BeautifulSoup(response.text, 'lxml')
             try:
                 for number in range(3, 7):
-                    param = {'id': find_number_book(soup)[number].split("/")[1].lstrip("b")}
-                    bookUrl_page = f'https://tululu.org{find_number_book(soup)[number]}'
+                    book_number = find_book_numbers(soup)[number]
+                    param = {'id': book_number.split("/")[1].lstrip("b")}
+                    bookUrl_page = f'https://tululu.org{book_number}'
                     bookurl = f'https://tululu.org/txt.php'
                     
                     response_page = requests.get(bookUrl_page)
