@@ -7,49 +7,19 @@ from urllib.parse import urljoin
 import json
 import logging
 import time
+from collections import OrderedDict
 
-def exceptions(disassembled_book, book_url):
-    write_book_param(disassembled_book)
-
-    if not args.skip_txt:
-        download_book(response_book, find_book_numbers(soup)[number].split("/")[1].lstrip("b"),
-                      disassembled_book["title"], folder='books/')
-
-    if not args.skip_imgs:
-        tag = soup_book.select_one('div.bookimage img')['src']
-        download_picture(tag, disassembled_book["pic_url"], book_url, folder='images/')
-    
 
 def find_book_numbers(soup):
     book_numbers = []
+    
     for number in soup.select('a'):
         if '/b' in number.get('href'):
             book_numbers.append(number.get('href'))
+    del book_numbers[0:6]
+    nonrepeating_book_numbers = list(OrderedDict.fromkeys(book_numbers))
 
-    for number in book_numbers:
-        if number != '/b239/':
-            book_numbers.remove(number)
-        else:
-            break
-
-    nonrepeating_book_numbers = []
-    for number in book_numbers:
-        if number not in nonrepeating_book_numbers:
-            nonrepeating_book_numbers.append(number)
     return nonrepeating_book_numbers
-
-
-def write_book_param(disassembled_book):
-    if not args.json_path:
-        with open(f"{pathlib.Path().resolve()}\\books_params.json", "a",
-                  encoding="utf-8") as file:
-            json.dump(disassembled_book, file, ensure_ascii=False)
-            file.write("\n")
-    else:
-        with open(f"{args.json_path}\\books_params.json", "a",
-                  encoding="utf-8") as file:
-            json.dump(disassembled_book, file, ensure_ascii=False)
-            file.write("\n")
 
 
 def check_for_redirect(response):
@@ -71,7 +41,7 @@ def download_book(response, id, filename, folder='books/'):
     book_file_path = os.path.join(folder, f'{id} {file_name}.txt')
 
     with open(book_file_path, 'w+', encoding="utf-8") as file:
-        file.write(response.text.replace(" ", ""))
+        file.write(response.text)
 
 
 def download_picture(title_tag, filename, book_url, folder='images/'):
@@ -112,7 +82,7 @@ if __name__ == "__main__":
     parser.add_argument("--dest_folder", action="store_true", help='путь к каталогу с результатами парсинга: картинкам, книгам, JSON')
     parser.add_argument("--skip_imgs", action="store_true", help='не скачивать картинки')
     parser.add_argument("--skip_txt", action="store_true", help='не скачивать книги')
-    parser.add_argument("--json_path", action="store_const", const=pathlib.Path().resolve(), help='указать свой путь к *.json файлу с результатами')
+    parser.add_argument("--json_path", default=pathlib.Path().resolve(), help='указать свой путь к *.json файлу с результатами')
 
     args = parser.parse_args()
 
@@ -130,15 +100,18 @@ if __name__ == "__main__":
         logging.basicConfig(level=logging.INFO)
         logging.info(pathlib.Path().resolve())
 
-    try:
-        for page in range(start_page, end_page):
+    for page in range(start_page, end_page):
+        try:
             url = f'https://tululu.org/l55/{page}/'
             response = requests.get(url)
             response.raise_for_status()
+            #print(response.is_redirect)
+            check_for_redirect(response)
             soup = BeautifulSoup(response.text, 'lxml')
+            list_book_numbers=find_book_numbers(soup)
             try:
-                for number in range(3, 7):
-                    book_number = find_book_numbers(soup)[number]
+                for number in range(25):
+                    book_number = list_book_numbers[number]
                     param = {'id': book_number.split("/")[1].lstrip("b")}
                     bookUrl_page = f'https://tululu.org{book_number}'
                     bookurl = f'https://tululu.org/txt.php'
@@ -152,15 +125,27 @@ if __name__ == "__main__":
     
                     disassembled_book = parse_book_page(soup_book)
     
-                    if disassembled_book:
-                        exceptions(disassembled_book, book_url)
+                    with open(f"{args.json_path}\\books_params.json", "a",
+                              encoding="utf-8") as file:
+                        json.dump(disassembled_book, file, ensure_ascii=False)
+                        file.write("\n")
+
+                    if not args.skip_txt:
+                        download_book(response_book, find_book_numbers(soup)[number].split("/")[1].lstrip("b"),
+                                      disassembled_book["title"], folder='books/')
+
+                    if not args.skip_imgs:
+                        tag = soup_book.select_one('div.bookimage img')['src']
+                        download_picture(tag, disassembled_book["pic_url"], book_url, folder='images/')
     
             except FileNotFoundError:
-                print('такой книги не существует')
+                print('такой книги не существует)')
     
-            except requests.exceptions.HTTPError:
-                print('такой книги не существует')
+        except requests.exceptions.HTTPError:
+            print('такой книги не существует')
 
-    except requests.exceptions.ConnectionError:
-        print('прервано соединение')
-        time.sleep(5)
+        except requests.exceptions.ConnectionError:
+            time.sleep(1)
+            print("Прервано соединение")
+
+     
