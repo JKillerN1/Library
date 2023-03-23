@@ -11,11 +11,9 @@ from collections import OrderedDict
 
 
 def find_book_numbers(soup):
-    book_numbers = []
-    
-    for number in soup.select('a'):
-        if '/b' in number.get('href'):
-            book_numbers.append(number.get('href'))
+    book_numbers = [number.get('href') for number in soup.select('a')
+                    if '/b' in number.get('href')]
+
     del book_numbers[0:6]
     nonrepeating_book_numbers = list(OrderedDict.fromkeys(book_numbers))
 
@@ -29,10 +27,8 @@ def check_for_redirect(response):
 
 def find_comments(soup):
     comments = soup.select("div.texts")
-    all_comments = []
-    for comment in comments:
-        comment = comment.select_one('span.black').text
-        all_comments.append(comment)
+    all_comments = [comment.select_one('span.black').text
+                    for comment in comments]
     return all_comments
 
 
@@ -60,7 +56,7 @@ def parse_book_page(soup):
     title_author = title_author.strip()
 
     genres = soup.select('span.d_book')
-    genres_books = [genre.select_one('a').text for genre in genres]
+    books_genres = [genre.select_one('a').text for genre in genres]
 
     picture_url = soup.select_one("div.bookimage img")['src']
 
@@ -69,7 +65,7 @@ def parse_book_page(soup):
         "author": title_author,
         "pic_url": picture_url,
         "comments": find_comments(soup),
-        "genres": " ".join(genres_books),
+        "genres": " ".join(books_genres),
     }
 
     return book_params
@@ -92,6 +88,7 @@ if __name__ == "__main__":
     os.makedirs("books", exist_ok=True)
     os.makedirs("images", exist_ok=True)
 
+    connection_count = 0
     text_book_page_url = "https://tululu.org/txt.php"
     book_page_url = 'https://tululu.org/b{id}/'
     book_url = 'http://tululu.org'
@@ -99,45 +96,51 @@ if __name__ == "__main__":
     if (args.dest_folder):
         logging.basicConfig(level=logging.INFO)
         logging.info(pathlib.Path().resolve())
+        '''в первой правке, в "что понадобится" было - (logging — если вам нужны эти принты)
+        я не совсем понимаю что требуется в данной правке'''
+
 
     for page in range(start_page, end_page):
         try:
             url = f'https://tululu.org/l55/{page}/'
             response = requests.get(url)
             response.raise_for_status()
-            #print(response.is_redirect)
+
             check_for_redirect(response)
             soup = BeautifulSoup(response.text, 'lxml')
-            list_book_numbers=find_book_numbers(soup)
+            book_numbers = find_book_numbers(soup)
             try:
-                for number in range(25):
-                    book_number = list_book_numbers[number]
-                    param = {'id': book_number.split("/")[1].lstrip("b")}
-                    bookUrl_page = f'https://tululu.org{book_number}'
+                book_param = []
+                for book_number in enumerate(book_numbers):
+                    param = {'id': book_number[1].split("/")[1].lstrip("b")}
+                    bookUrl_page = f'https://tululu.org{book_number[1]}'
                     bookurl = f'https://tululu.org/txt.php'
                     
                     response_page = requests.get(bookUrl_page)
                     response_page.raise_for_status()
+
                     response_book = requests.get(bookurl, params=param)
                     response_book.raise_for_status()
 
                     soup_book = BeautifulSoup(response_page.text, 'lxml')
     
                     disassembled_book = parse_book_page(soup_book)
-    
-                    with open(f"{args.json_path}\\books_params.json", "a",
-                              encoding="utf-8") as file:
-                        json.dump(disassembled_book, file, ensure_ascii=False)
-                        file.write("\n")
+
+                    book_param.append(disassembled_book)
 
                     if not args.skip_txt:
-                        download_book(response_book, find_book_numbers(soup)[number].split("/")[1].lstrip("b"),
+                        download_book(response_book, book_number[1].split("/")[1].lstrip("b"),
                                       disassembled_book["title"], folder='books/')
 
                     if not args.skip_imgs:
-                        tag = soup_book.select_one('div.bookimage img')['src']
-                        download_picture(tag, disassembled_book["pic_url"], book_url, folder='images/')
-    
+                        download_picture(disassembled_book["pic_url"], disassembled_book["pic_url"], book_page_url, folder='images/')
+
+                with open(os.path.join(args.json_path, "books_params.json"), "a",
+                          encoding="utf-8") as file:
+                    for book in book_param:
+                        json.dump(book, file, ensure_ascii=False)
+                        file.write('\n')
+
             except FileNotFoundError:
                 print('такой книги не существует)')
     
@@ -145,7 +148,19 @@ if __name__ == "__main__":
             print('такой книги не существует')
 
         except requests.exceptions.ConnectionError:
-            time.sleep(1)
+            time.sleep(5)
+            connection_count += 1
             print("Прервано соединение")
+            if connection_count == 10:
+                time.sleep(3600)
 
+        ''' (Сбой при скачивании одной страницы или файла не помешает скачать остальные.
+
+Обработаны исключения:
+ requests.exceptions.HTTPError
+ requests.exceptions.ConnectionError
+ Пользователь узнает о каждом сбое и их причинах
+ При потере сетевого соединения парсер пощадит CPU)
+ 
+ я не понимаю что не выполнено'''
      
