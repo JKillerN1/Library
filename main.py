@@ -111,17 +111,13 @@ if __name__ == "__main__":
                 try:
                     param = {'id': book_number[1].split("/")[1].lstrip("b")}
 
-                    book_url_page = f'https://tululu.org{book_number[1]}'
+                    book_url_page = f'https://tululu.org/{book_number[1]}'
                     book_url = f'https://tululu.org/txt.php'
-
 
                     page_response = requests.get(book_url_page)
                     page_response.raise_for_status()
-
-
                     book_response = requests.get(book_url, params=param)
                     book_response.raise_for_status()
-
 
                     soup_book = BeautifulSoup(page_response.text, 'lxml')
 
@@ -137,6 +133,10 @@ if __name__ == "__main__":
                         download_picture(disassembled_book["pic_url"], disassembled_book["pic_url"], book_page_url, folder='images/')
 
                 except FileNotFoundError:
+                    logging.basicConfig(level=logging.INFO)
+                    logging.info("такой книги не существует")
+
+                except ValueError:
                     logging.basicConfig(level=logging.INFO)
                     logging.info("такой книги не существует")
 
