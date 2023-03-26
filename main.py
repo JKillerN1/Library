@@ -89,17 +89,13 @@ if __name__ == "__main__":
     os.makedirs("images", exist_ok=True)
 
     connection_count = 0
-    text_book_page_url = "https://tululu.org/txt.php"
     book_page_url = 'https://tululu.org/b{id}/'
-    book_url = 'http://tululu.org'
 
     if (args.dest_folder):
         logging.basicConfig(level=logging.INFO)
         logging.info(pathlib.Path().resolve())
-        '''в первой правке, в "что понадобится" было - (logging — если вам нужны эти принты)
-        я не совсем понимаю что требуется в данной правке'''
 
-
+    books_params=[]
     for page in range(start_page, end_page):
         try:
             url = f'https://tululu.org/l55/{page}/'
@@ -109,58 +105,68 @@ if __name__ == "__main__":
             check_for_redirect(response)
             soup = BeautifulSoup(response.text, 'lxml')
             book_numbers = find_book_numbers(soup)
-            try:
-                book_param = []
-                for book_number in enumerate(book_numbers):
+
+            book_param = []
+            for book_number in enumerate(book_numbers):
+                try:
                     param = {'id': book_number[1].split("/")[1].lstrip("b")}
-                    bookUrl_page = f'https://tululu.org{book_number[1]}'
-                    bookurl = f'https://tululu.org/txt.php'
-                    
-                    response_page = requests.get(bookUrl_page)
-                    response_page.raise_for_status()
 
-                    response_book = requests.get(bookurl, params=param)
-                    response_book.raise_for_status()
+                    book_url_page = f'https://tululu.org{book_number[1]}'
+                    book_url = f'https://tululu.org/txt.php'
 
-                    soup_book = BeautifulSoup(response_page.text, 'lxml')
-    
+
+                    page_response = requests.get(book_url_page)
+                    page_response.raise_for_status()
+
+
+                    book_response = requests.get(book_url, params=param)
+                    book_response.raise_for_status()
+
+
+                    soup_book = BeautifulSoup(page_response.text, 'lxml')
+
                     disassembled_book = parse_book_page(soup_book)
 
                     book_param.append(disassembled_book)
 
                     if not args.skip_txt:
-                        download_book(response_book, book_number[1].split("/")[1].lstrip("b"),
+                        download_book(book_response, book_number[1].split("/")[1].lstrip("b"),
                                       disassembled_book["title"], folder='books/')
 
                     if not args.skip_imgs:
                         download_picture(disassembled_book["pic_url"], disassembled_book["pic_url"], book_page_url, folder='images/')
 
-                with open(os.path.join(args.json_path, "books_params.json"), "a",
-                          encoding="utf-8") as file:
-                    for book in book_param:
-                        json.dump(book, file, ensure_ascii=False)
-                        file.write('\n')
+                except FileNotFoundError:
+                    logging.basicConfig(level=logging.INFO)
+                    logging.info("такой книги не существует")
 
-            except FileNotFoundError:
-                print('такой книги не существует)')
+
+                except requests.exceptions.ConnectionError:
+                    time.sleep(5)
+                    connection_count += 1
+                    logging.basicConfig(level=logging.INFO)
+                    logging.info("Прервано соединение при скачивании книги")
+                    if connection_count == 10:
+                        time.sleep(3600)
+
+            books_params.append(book_param)
     
         except requests.exceptions.HTTPError:
-            print('такой книги не существует')
+            logging.basicConfig(level=logging.INFO)
+            logging.info("такой книги не существует")
+
 
         except requests.exceptions.ConnectionError:
             time.sleep(5)
             connection_count += 1
-            print("Прервано соединение")
+            logging.basicConfig(level=logging.INFO)
+            logging.info("Прервано соединение")
             if connection_count == 10:
                 time.sleep(3600)
 
-        ''' (Сбой при скачивании одной страницы или файла не помешает скачать остальные.
-
-Обработаны исключения:
- requests.exceptions.HTTPError
- requests.exceptions.ConnectionError
- Пользователь узнает о каждом сбое и их причинах
- При потере сетевого соединения парсер пощадит CPU)
- 
- я не понимаю что не выполнено'''
-     
+    with open(os.path.join(args.json_path, "books_params.json"), "a",
+              encoding="utf-8") as file:
+        for b in books_params:
+            for book in b:
+                json.dump(book, file, ensure_ascii=False)
+                file.write('\n')
