@@ -10,6 +10,10 @@ import time
 from collections import OrderedDict
 
 
+class FormatError(TypeError):
+    pass
+
+
 def find_book_numbers(soup):
     book_numbers = [number.get('href') for number in soup.select('a')
                     if '/b' in number.get('href')]
@@ -71,11 +75,14 @@ def parse_book_page(soup):
     return book_params
 
 
+logger = logging.getLogger(__file__)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Напишите id книг, с какой по какую надо скачать')
     parser.add_argument('start_page', type=int, help='странциа с которой нужно начинать скачивать книги')
     parser.add_argument('end_page', type=int, help='странциа по которую нужно скачивать книги')
-    parser.add_argument("--dest_folder", action="store_true", help='путь к каталогу с результатами парсинга: картинкам, книгам, JSON')
+    parser.add_argument("--dest_folder", action='store_const', const=pathlib.Path().resolve(), help='путь к каталогу с результатами парсинга: картинкам, книгам, JSON')
     parser.add_argument("--skip_imgs", action="store_true", help='не скачивать картинки')
     parser.add_argument("--skip_txt", action="store_true", help='не скачивать книги')
     parser.add_argument("--json_path", default=pathlib.Path().resolve(), help='указать свой путь к *.json файлу с результатами')
@@ -93,80 +100,82 @@ if __name__ == "__main__":
 
     if (args.dest_folder):
         logging.basicConfig(level=logging.INFO)
-        logging.info(pathlib.Path().resolve())
+        logger.info(pathlib.Path().resolve())
 
     books_params=[]
     for page in range(start_page, end_page):
         try:
             url = f'https://tululu.org/l55/{page}/'
             response = requests.get(url)
-            response.raise_for_status()
+            if response.history:
+                raise FormatError
 
             check_for_redirect(response)
             soup = BeautifulSoup(response.text, 'lxml')
             book_numbers = find_book_numbers(soup)
 
-            book_param = []
-            for book_number in enumerate(book_numbers):
+            for number, book_number in enumerate(book_numbers):
                 try:
-                    param = {'id': book_number[1].split("/")[1].lstrip("b")}
+                    param = {'id': book_number.strip('/').lstrip("b")}
 
-                    book_url_page = f'https://tululu.org/{book_number[1]}'
+                    book_url_page = f'https://tululu.org/{book_number}'
                     book_url = f'https://tululu.org/txt.php'
 
                     page_response = requests.get(book_url_page)
-                    page_response.raise_for_status()
+                    if page_response.history:
+                        raise FormatError
                     book_response = requests.get(book_url, params=param)
-                    book_response.raise_for_status()
+                    if book_response.history:
+                        raise FormatError
 
                     soup_book = BeautifulSoup(page_response.text, 'lxml')
 
                     disassembled_book = parse_book_page(soup_book)
 
-                    book_param.append(disassembled_book)
+                    books_params.append(disassembled_book)
 
                     if not args.skip_txt:
-                        download_book(book_response, book_number[1].split("/")[1].lstrip("b"),
-                                      disassembled_book["title"], folder='books/')
+                        download_book(book_response,
+                                      book_number.strip('/').lstrip("b"),
+                                      disassembled_book["title"],
+                                      folder='books/')
 
                     if not args.skip_imgs:
-                        download_picture(disassembled_book["pic_url"], disassembled_book["pic_url"], book_page_url, folder='images/')
+                        download_picture(disassembled_book["pic_url"],
+                                         disassembled_book["pic_url"],
+                                         book_page_url, folder='images/')
 
                 except FileNotFoundError:
                     logging.basicConfig(level=logging.INFO)
-                    logging.info("такой книги не существует")
+                    logger.info("такой книги не существует")
 
-                except ValueError:
+                except FormatError:
                     logging.basicConfig(level=logging.INFO)
-                    logging.info("такой книги не существует")
-
+                    logger.info("такой книги не существует!")
 
                 except requests.exceptions.ConnectionError:
                     time.sleep(5)
                     connection_count += 1
                     logging.basicConfig(level=logging.INFO)
-                    logging.info("Прервано соединение при скачивании книги")
+                    logger.info("Прервано соединение при скачивании книги")
                     if connection_count == 10:
                         time.sleep(3600)
 
-            books_params.append(book_param)
-    
+
         except requests.exceptions.HTTPError:
             logging.basicConfig(level=logging.INFO)
-            logging.info("такой книги не существует")
+            logger.info("такой ссылки не существует")
 
 
         except requests.exceptions.ConnectionError:
             time.sleep(5)
             connection_count += 1
             logging.basicConfig(level=logging.INFO)
-            logging.info("Прервано соединение")
+            logger.info("Прервано соединение")
             if connection_count == 10:
                 time.sleep(3600)
 
     with open(os.path.join(args.json_path, "books_params.json"), "a",
               encoding="utf-8") as file:
-        for b in books_params:
-            for book in b:
-                json.dump(book, file, ensure_ascii=False)
-                file.write('\n')
+        json.dump(books_params, file, ensure_ascii=False)
+
