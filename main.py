@@ -26,7 +26,7 @@ def find_book_numbers(soup):
 
 def check_for_redirect(response):
     if response.history:
-        raise requests.exceptions.HTTPError
+        raise FormatError
 
 
 def find_comments(soup):
@@ -98,20 +98,18 @@ if __name__ == "__main__":
     connection_count = 0
     book_page_url = 'https://tululu.org/b{id}/'
 
-    if (args.dest_folder):
+    '''if (args.dest_folder):
         logging.basicConfig(level=logging.INFO)
-        logger.info(pathlib.Path().resolve())
+        logger.info(pathlib.Path().resolve())'''
 
     books_params=[]
     for page in range(start_page, end_page):
         try:
             url = f'https://tululu.org/l55/{page}/'
             response = requests.get(url)
-            response.raise_for_status()
-            if response.history:
-                raise FormatError
-
             check_for_redirect(response)
+            response.raise_for_status()
+
             soup = BeautifulSoup(response.text, 'lxml')
             book_numbers = find_book_numbers(soup)
 
@@ -125,12 +123,11 @@ if __name__ == "__main__":
 
                     page_response = requests.get(book_url_page)
                     page_response.raise_for_status()
-                    if page_response.history:
-                        raise FormatError
+                    check_for_redirect(page_response)
+
                     book_response = requests.get(book_url, params=param)
                     book_response.raise_for_status()
-                    if book_response.history:
-                        raise FormatError
+                    check_for_redirect(book_response)
 
                     soup_book = BeautifulSoup(page_response.text, 'lxml')
 
@@ -169,6 +166,9 @@ if __name__ == "__main__":
             logging.basicConfig(level=logging.INFO)
             logger.info("такой ссылки не существует")
 
+        except FormatError:
+            logging.basicConfig(level=logging.INFO)
+            logger.info("такой страницы не существует!")
 
         except requests.exceptions.ConnectionError:
             time.sleep(5)
