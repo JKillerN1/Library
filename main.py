@@ -44,8 +44,8 @@ def download_book(response, id, filename, folder='books/'):
         file.write(response.text)
 
 
-def download_picture(title_tag, filename, book_url, folder='images/'):
-    response = requests.get(urljoin(book_url, filename))
+def download_picture(title_tag, book_url, folder='images/'):
+    response = requests.get(urljoin(book_url, title_tag))
     response.raise_for_status()
     picture_name = title_tag.split('/')[2]
     path = os.path.join(folder, picture_name)
@@ -107,6 +107,7 @@ if __name__ == "__main__":
         try:
             url = f'https://tululu.org/l55/{page}/'
             response = requests.get(url)
+            response.raise_for_status()
             if response.history:
                 raise FormatError
 
@@ -116,15 +117,18 @@ if __name__ == "__main__":
 
             for number, book_number in enumerate(book_numbers):
                 try:
-                    param = {'id': book_number.strip('/').lstrip("b")}
+                    book_id = book_number.strip('/').lstrip("b")
+                    param = {'id': book_id}
 
                     book_url_page = f'https://tululu.org/{book_number}'
                     book_url = f'https://tululu.org/txt.php'
 
                     page_response = requests.get(book_url_page)
+                    page_response.raise_for_status()
                     if page_response.history:
                         raise FormatError
                     book_response = requests.get(book_url, params=param)
+                    book_response.raise_for_status()
                     if book_response.history:
                         raise FormatError
 
@@ -136,13 +140,12 @@ if __name__ == "__main__":
 
                     if not args.skip_txt:
                         download_book(book_response,
-                                      book_number.strip('/').lstrip("b"),
+                                      book_id,
                                       disassembled_book["title"],
                                       folder='books/')
 
                     if not args.skip_imgs:
                         download_picture(disassembled_book["pic_url"],
-                                         disassembled_book["pic_url"],
                                          book_page_url, folder='images/')
 
                 except FileNotFoundError:
